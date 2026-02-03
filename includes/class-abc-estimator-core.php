@@ -458,12 +458,7 @@ class ABC_Estimator_Core {
 
 
     public function sanitize_status($value) {
-        $value = strtolower(trim((string) $value));
-        $allowed = ['estimate','pending','production','completed'];
-        if (!in_array($value, $allowed, true)) {
-            return 'estimate';
-        }
-        return $value;
+        return self::normalize_status($value);
     }
 
     /**
@@ -482,41 +477,7 @@ class ABC_Estimator_Core {
         $due     = (string) get_post_meta($post_id, 'abc_due_date', true);
         $json    = (string) get_post_meta($post_id, 'abc_estimate_data', true);
 
-        $status = $this->sanitize_status($status);
-
-        $summary = '';
-        $decoded = json_decode(wp_unslash($json), true);
-        if (is_array($decoded)) {
-            $parts = [];
-            $walker = function ($node) use (&$walker, &$parts) {
-                if (is_array($node)) {
-                    foreach ($node as $k => $v) {
-                        if (is_array($v)) {
-                            $walker($v);
-                            continue;
-                        }
-                        if (is_string($v) || is_numeric($v)) {
-                            $key = is_string($k) ? strtolower($k) : '';
-                            if (in_array($key, ['description','desc','name','item','product','service','sku','notes','note'], true)) {
-                                $parts[] = (string) $v;
-                            }
-                        }
-                    }
-                }
-            };
-            $walker($decoded);
-
-            if (!empty($parts)) {
-                $summary = implode(' ', $parts);
-            }
-        }
-
-        $summary = preg_replace('/\s+/', ' ', trim((string) $summary));
-        if (strlen($summary) > 3500) {
-            $summary = substr($summary, 0, 3500);
-        }
-
-        $index = trim(sprintf('Invoice: %s | Status: %s | Due: %s | %s', $invoice, $status, $due, $summary));
+        $index = self::build_search_index_string($invoice, $status, $due, $json);
 
         // Compare to current excerpt and update only if changed.
         $post = get_post($post_id);
@@ -563,5 +524,63 @@ class ABC_Estimator_Core {
             ];
         }
         return $out;
+    }
+
+    /**
+     * Build a consistent search index string for excerpts.
+     */
+    public static function build_search_index_string($invoice, $status, $due, $json) {
+        $invoice = (string) $invoice;
+        $status = self::normalize_status($status);
+        $due = (string) $due;
+
+        $summary = self::build_summary_from_json($json);
+        $index = trim(sprintf('Invoice: %s | Status: %s | Due: %s | %s', $invoice, $status, $due, $summary));
+        return $index;
+    }
+
+    private static function normalize_status($value) {
+        $value = strtolower(trim((string) $value));
+        $allowed = ['estimate','pending','production','completed'];
+        if (!in_array($value, $allowed, true)) {
+            return 'estimate';
+        }
+        return $value;
+    }
+
+    private static function build_summary_from_json($json) {
+        $summary = '';
+        $decoded = json_decode(wp_unslash((string) $json), true);
+        if (is_array($decoded)) {
+            $parts = [];
+            $walker = function ($node) use (&$walker, &$parts) {
+                if (is_array($node)) {
+                    foreach ($node as $k => $v) {
+                        if (is_array($v)) {
+                            $walker($v);
+                            continue;
+                        }
+                        if (is_string($v) || is_numeric($v)) {
+                            $key = is_string($k) ? strtolower($k) : '';
+                            if (in_array($key, ['description','desc','name','item','product','service','sku','notes','note'], true)) {
+                                $parts[] = (string) $v;
+                            }
+                        }
+                    }
+                }
+            };
+            $walker($decoded);
+
+            if (!empty($parts)) {
+                $summary = implode(' ', $parts);
+            }
+        }
+
+        $summary = preg_replace('/\s+/', ' ', trim((string) $summary));
+        if (strlen($summary) > 3500) {
+            $summary = substr($summary, 0, 3500);
+        }
+
+        return $summary;
     }
 }

@@ -32,6 +32,27 @@ class ABC_CSV_Manager {
         return (bool) preg_match('/^\d{4}-\d{2}$/', (string) $invoice);
     }
 
+    /**
+     * Normalize invoice values to match UI expectations.
+     */
+    private function sanitize_invoice($invoice) {
+        return strtoupper(trim((string) $invoice));
+    }
+
+    /**
+     * Normalize due dates; returns null when invalid.
+     */
+    private function sanitize_due_date($due_date) {
+        $due_date = trim((string) $due_date);
+        if ($due_date === '') {
+            return '';
+        }
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $due_date)) {
+            return null;
+        }
+        return $due_date;
+    }
+
 
     /**
      * Check if invoice already exists (prevents duplicates on re-import).
@@ -95,21 +116,26 @@ class ABC_CSV_Manager {
             }
 
             $title   = sanitize_text_field((string) $data[0]);
-            $invoice = sanitize_text_field((string) $data[1]);
-            $due_date = sanitize_text_field((string) $data[2]);
+            $invoice = $this->sanitize_invoice($data[1]);
+            $due_date = $this->sanitize_due_date($data[2]);
 
             // Allow header row.
-            if ($row_index === 1 && preg_match('/invoice/i', $invoice)) {
+            if ($row_index === 1 && preg_match('/invoice/i', (string) $data[1])) {
                 continue;
             }
 
-            if ($title === '' && $invoice === '' && $due_date === '') {
+            if ($title === '' && $invoice === '' && ($due_date === '' || $due_date === null)) {
                 continue;
             }
 
             // Validation rule
             if (!$this->validate_invoice_format($invoice)) {
                 $errors[] = "Row {$row_index} ignored (Invalid Invoice: {$invoice}). Must be tttt-yy (e.g., 1005-24).";
+                continue;
+            }
+
+            if ($due_date === null) {
+                $errors[] = "Row {$row_index} ignored (Invalid Due Date: {$data[2]}). Must be YYYY-MM-DD.";
                 continue;
             }
 
@@ -121,11 +147,12 @@ class ABC_CSV_Manager {
             }
 
             // Create post.
+            $excerpt = $this->build_search_index_excerpt($invoice, 'estimate', $due_date, '[]');
             $post_id = wp_insert_post([
                 'post_type'   => 'abc_estimate',
                 'post_title'   => $title !== '' ? $title : $invoice,
                 'post_status'  => 'publish',
-                'post_excerpt' => 'Invoice: ' . $invoice . ' | ' . ($title !== '' ? $title : ''),
+                'post_excerpt' => $excerpt,
             ], true);
 
             if (is_wp_error($post_id)) {
@@ -265,5 +292,17 @@ class ABC_CSV_Manager {
             </div>
         </div>
         <?php
+    }
+
+    private function build_search_index_excerpt($invoice, $status, $due_date, $estimate_json) {
+        if (class_exists('ABC_Estimator_Core')) {
+            return ABC_Estimator_Core::build_search_index_string($invoice, $status, $due_date, $estimate_json);
+        }
+
+        $invoice = (string) $invoice;
+        $status = (string) $status;
+        $due_date = (string) $due_date;
+
+        return trim(sprintf('Invoice: %s | Status: %s | Due: %s | %s', $invoice, $status, $due_date, ''));
     }
 }
