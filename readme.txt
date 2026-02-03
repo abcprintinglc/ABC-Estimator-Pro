@@ -1,6 +1,6 @@
-ABC Estimator Pro v1.7.3
+ABC Suite (Estimator, Production, Designer) v1.8.0
 
-Includes:
+Includes (Estimator Pro):
 - Custom Post Type: abc_estimate (Estimates & Jobs)
 - Job Jacket Meta Box (Invoice, Order Date, Approval Date, Due Date, Rush, Status, Line Item JSON)
 - Workflow Status meta (estimate/pending/production/completed)
@@ -17,3 +17,7 @@ Includes:
 
 Notes:
 - Line item grid UI is intended to mount into #abc-react-estimate-builder-mount and store JSON in #abc_estimate_data.
+
+Also included in this suite:
+- ABC Production System (Job Jackets, Log Book, CSV, Print Views, Dashboard, Frontend).
+- ABC B2B Template Designer (WooCommerce template designer, draft editor, org filtering, portal).

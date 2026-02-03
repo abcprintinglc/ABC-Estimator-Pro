@@ -15,41 +15,45 @@ define('ABC_B2B_DESIGNER_VERSION', '0.2.4');
 // Users with this capability can bypass Organization filtering (in addition to Administrators).
 define('ABC_B2B_DESIGNER_BYPASS_CAP', 'abc_b2b_designer_bypass');
 
-register_activation_hook(__FILE__, function () {
-    // Grant bypass capability to Administrators by default.
-    $admin = get_role('administrator');
-    if ($admin && method_exists($admin, 'add_cap')) {
-        $admin->add_cap(ABC_B2B_DESIGNER_BYPASS_CAP);
-    }
+if (!function_exists('abc_b2b_designer_activate')) {
+    function abc_b2b_designer_activate() {
+        // Grant bypass capability to Administrators by default.
+        $admin = get_role('administrator');
+        if ($admin && method_exists($admin, 'add_cap')) {
+            $admin->add_cap(ABC_B2B_DESIGNER_BYPASS_CAP);
+        }
 
-    // Create Draft Editor page (dedicated editor for team workflow)
-    $page_id = (int) get_option('abc_b2b_draft_editor_page_id', 0);
-    if ($page_id <= 0 || !get_post($page_id)) {
-        $existing = get_posts([
-            'post_type' => 'page',
-            'post_status' => ['publish','private','draft'],
-            'numberposts' => 1,
-            'meta_key' => '_abc_b2b_draft_editor_page',
-            'meta_value' => '1',
-        ]);
-        if (!empty($existing)) {
-            $page_id = (int) $existing[0]->ID;
-        } else {
-            $page_id = wp_insert_post([
+        // Create Draft Editor page (dedicated editor for team workflow)
+        $page_id = (int) get_option('abc_b2b_draft_editor_page_id', 0);
+        if ($page_id <= 0 || !get_post($page_id)) {
+            $existing = get_posts([
                 'post_type' => 'page',
-                'post_status' => 'publish',
-                'post_title' => 'Customize Draft',
-                'post_content' => '[abc_b2b_draft_editor]',
+                'post_status' => ['publish','private','draft'],
+                'numberposts' => 1,
+                'meta_key' => '_abc_b2b_draft_editor_page',
+                'meta_value' => '1',
             ]);
+            if (!empty($existing)) {
+                $page_id = (int) $existing[0]->ID;
+            } else {
+                $page_id = wp_insert_post([
+                    'post_type' => 'page',
+                    'post_status' => 'publish',
+                    'post_title' => 'Customize Draft',
+                    'post_content' => '[abc_b2b_draft_editor]',
+                ]);
+                if ($page_id && !is_wp_error($page_id)) {
+                    update_post_meta($page_id, '_abc_b2b_draft_editor_page', '1');
+                }
+            }
             if ($page_id && !is_wp_error($page_id)) {
-                update_post_meta($page_id, '_abc_b2b_draft_editor_page', '1');
+                update_option('abc_b2b_draft_editor_page_id', (int) $page_id);
             }
         }
-        if ($page_id && !is_wp_error($page_id)) {
-            update_option('abc_b2b_draft_editor_page_id', (int)$page_id);
-        }
     }
-});
+}
+
+register_activation_hook(__FILE__, 'abc_b2b_designer_activate');
 define('ABC_B2B_DESIGNER_FILE', __FILE__);
 define('ABC_B2B_DESIGNER_DIR', plugin_dir_path(__FILE__));
 define('ABC_B2B_DESIGNER_URL', plugin_dir_url(__FILE__));

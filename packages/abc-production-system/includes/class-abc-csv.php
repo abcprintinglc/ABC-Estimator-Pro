@@ -1,12 +1,12 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
-class ABC_CSV_Manager {
+class ABC_Production_CSV_Manager {
 
     public function __construct() {
         add_action('admin_menu', [$this, 'register_csv_page']);
-        add_action('admin_post_abc_import_csv', [$this, 'handle_csv_import']);
-        add_action('admin_post_abc_delete_all_csv', [$this, 'handle_delete_all_csv']);
+        add_action('admin_post_abcps_import_csv', [$this, 'handle_csv_import']);
+        add_action('admin_post_abcps_delete_all_csv', [$this, 'handle_delete_all_csv']);
         add_action('admin_notices', [$this, 'render_admin_notices']);
     }
 
@@ -52,15 +52,15 @@ class ABC_CSV_Manager {
             </div>
 
             <form method="post" enctype="multipart/form-data" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top: 16px;">
-                <input type="hidden" name="action" value="abc_import_csv">
-                <?php wp_nonce_field('abc_import_csv', 'abc_import_nonce'); ?>
+                <input type="hidden" name="action" value="abcps_import_csv">
+                <?php wp_nonce_field('abcps_import_csv', 'abcps_import_nonce'); ?>
                 <input type="file" name="abc_csv_file" accept=".csv" required>
                 <button type="submit" class="button button-primary" style="margin-left: 8px;">Import CSV</button>
             </form>
 
             <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin-top: 10px;" onsubmit="return confirm('Delete ALL imported entries? This cannot be undone.');">
-                <input type="hidden" name="action" value="abc_delete_all_csv">
-                <?php wp_nonce_field('abc_delete_all_csv', 'abc_delete_all_nonce'); ?>
+                <input type="hidden" name="action" value="abcps_delete_all_csv">
+                <?php wp_nonce_field('abcps_delete_all_csv', 'abcps_delete_all_nonce'); ?>
                 <button type="submit" class="button button-link-delete">Delete All Imported Entries</button>
             </form>
         </div>
@@ -149,7 +149,7 @@ class ABC_CSV_Manager {
         if (!current_user_can('manage_options')) {
             wp_die('You do not have permission to import.');
         }
-        if (!isset($_POST['abc_import_nonce']) || !wp_verify_nonce($_POST['abc_import_nonce'], 'abc_import_csv')) {
+        if (!isset($_POST['abcps_import_nonce']) || !wp_verify_nonce($_POST['abcps_import_nonce'], 'abcps_import_csv')) {
             wp_die('Invalid nonce.');
         }
         if (empty($_FILES['abc_csv_file']['tmp_name'])) {
@@ -344,7 +344,7 @@ class ABC_CSV_Manager {
         if (!current_user_can('manage_options')) {
             wp_die('You do not have permission to delete.');
         }
-        if (!isset($_POST['abc_delete_all_nonce']) || !wp_verify_nonce($_POST['abc_delete_all_nonce'], 'abc_delete_all_csv')) {
+        if (!isset($_POST['abcps_delete_all_nonce']) || !wp_verify_nonce($_POST['abcps_delete_all_nonce'], 'abcps_delete_all_csv')) {
             wp_die('Invalid nonce.');
         }
 
