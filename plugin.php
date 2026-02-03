@@ -18,8 +18,15 @@ require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-log-book-logic.php';
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-csv-manager.php';
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-frontend.php';
 
-require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-production-system/abc-production-system.php';
-require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-b2b-designer/abc-b2b-designer.php';
+add_action('plugins_loaded', function () {
+    if (!defined('ABCPS_VERSION') && !class_exists('ABC_CPT')) {
+        require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-production-system/abc-production-system.php';
+    }
+
+    if (!defined('ABC_B2B_DESIGNER_VERSION') && !class_exists('ABC_B2B_Designer_Plugin')) {
+        require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-b2b-designer/abc-b2b-designer.php';
+    }
+}, 0);
 
 /**
  * Bootstrap
