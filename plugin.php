@@ -13,20 +13,45 @@ define('ABC_ESTIMATOR_PRO_VERSION', '1.8.0');
 define('ABC_ESTIMATOR_PRO_DIR', plugin_dir_path(__FILE__));
 define('ABC_ESTIMATOR_PRO_URL', plugin_dir_url(__FILE__));
 
+/**
+ * Check whether a separate plugin (by plugin basename) is active.
+ */
+function abc_estimator_pro_is_plugin_active($plugin_basename) {
+    $active_plugins = (array) get_option('active_plugins', []);
+    if (in_array($plugin_basename, $active_plugins, true)) {
+        return true;
+    }
+
+    if (is_multisite()) {
+        $network_active = (array) get_site_option('active_sitewide_plugins', []);
+        if (isset($network_active[$plugin_basename])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-estimator-core.php';
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-log-book-logic.php';
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-csv-manager.php';
 require_once ABC_ESTIMATOR_PRO_DIR . 'includes/class-abc-frontend.php';
 
-add_action('plugins_loaded', function () {
-    if (!defined('ABCPS_VERSION') && !class_exists('ABC_CPT')) {
-        require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-production-system/abc-production-system.php';
-    }
+if (
+    !defined('ABCPS_VERSION')
+    && !class_exists('ABC_CPT')
+    && !abc_estimator_pro_is_plugin_active('abc-production-system/abc-production-system.php')
+) {
+    require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-production-system/abc-production-system.php';
+}
 
-    if (!defined('ABC_B2B_DESIGNER_VERSION') && !class_exists('ABC_B2B_Designer_Plugin')) {
-        require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-b2b-designer/abc-b2b-designer.php';
-    }
-}, 0);
+if (
+    !defined('ABC_B2B_DESIGNER_VERSION')
+    && !class_exists('ABC_B2B_Designer_Plugin')
+    && !abc_estimator_pro_is_plugin_active('abc-b2b-designer/abc-b2b-designer.php')
+) {
+    require_once ABC_ESTIMATOR_PRO_DIR . 'packages/abc-b2b-designer/abc-b2b-designer.php';
+}
 
 /**
  * Bootstrap
