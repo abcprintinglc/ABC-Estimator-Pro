@@ -1,0 +1,21 @@
+/* ABC Estimator Pro - admin styles */
+
+.abc-jacket-grid input[type="text"],
+.abc-jacket-grid input[type="date"]{
+  max-width: 260px;
+}
+
+/* Urgency highlighting used by JS log book table */
+.urgency-urgent{
+  background: #ffebeb !important;
+  border-left: 5px solid #b32d2e;
+}
+
+.urgency-warning{
+  background: #fff7e6 !important;
+  border-left: 5px solid #dba617;
+}
+
+.urgency-normal{
+  border-left: 5px solid transparent;
+}
